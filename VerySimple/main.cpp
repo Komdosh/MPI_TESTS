@@ -16,7 +16,6 @@ struct threadData {
     int threadId;
     int rank;
     int *shared;
-    MPI_Win win;
 };
 
 void printArray(const int *array) {
@@ -26,29 +25,15 @@ void printArray(const int *array) {
     printf("\n");
 }
 
-void putSharedArr(MPI_Win win, int *arrToSend, int threadId) {
-    int rankToSend = 1;
-
-    printf("Put data in the shared memory of rank %d, thread %d\n", rankToSend, threadId);
-    MPI_Put(&(arrToSend[0]), NUM_ELEMENT, MPI_INT, rankToSend, threadId, NUM_ELEMENT, MPI_INT, win);
-}
-
-void getSharedArr(MPI_Win win, int rank, int threadId) {
-    int local[NUM_ELEMENT] = {0};
-    MPI_Get(&(local[0]), NUM_ELEMENT, MPI_INT, rank, threadId, NUM_ELEMENT, MPI_INT, win);
-
-    printf("Rank %d, thread %d gets data from the shared memory:", rank, threadId);
-    printArray(local);
-}
-
-void sendSharedArr(int *arrToSend, int threadId){
+void sendSharedArr(int *arrToSend, int threadId) {
     int rankToSend = 1;
 
     printf("Send data to rank %d, thread %d\n", rankToSend, threadId);
     MPI_Send(&(arrToSend[0]), NUM_ELEMENT, MPI_INT, rankToSend, threadId, MPI_COMM_WORLD);
+    printf("Sent\n");
 }
 
-void receiveSharedArr(int rank, int threadId){
+void receiveSharedArr(int rank, int threadId) {
     int sourceRank = 0;
 
     int local[NUM_ELEMENT] = {0};
@@ -64,27 +49,16 @@ void *MPIAction(void *threadarg) {
     int rank = threadData->rank;
     int threadId = threadData->threadId;
     int *shared = threadData->shared;
-    MPI_Win win = threadData->win;
 
     //printf("rank %d, thread %d, %p\n", rank, threadId, shared);
     if (rank == 0) {
         for (int i = 0; i < NUM_ELEMENT; i++) {
-            shared[i] = (rank+1)*100+(threadId+1)*10+i;
+            shared[i] = (rank + 1) * 100 + (threadId + 1) * 10 + i;
         }
         printf("Rank %d, thread %d sets data in the shared memory:", rank, threadId);
 
         printArray(shared);
     }
-
-    MPI_Win_fence(0, win);
-    if (rank == 0) {
-        putSharedArr(win, shared, threadId);
-    }
-    MPI_Win_fence(0, win);
-    if (rank == 1) {
-        getSharedArr(win, rank, threadId);
-    }
-    MPI_Win_fence(0, win);
 
     if (rank == 0) {
         for (int i = 0; i < NUM_ELEMENT; i++) {
@@ -105,6 +79,13 @@ void *MPIAction(void *threadarg) {
     }
 
     pthread_exit(nullptr);
+}
+
+void waitToAttachDebug() {
+    volatile int i = 0;
+    while (i == 0) {
+        sleep(5);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -129,9 +110,9 @@ int main(int argc, char **argv) {
     }
 
     //printf("Rank %d running on %s\n", rank, processorName);
-
-    MPI_Win win[NUM_OF_THREADS];
-    int shared[NUM_OF_THREADS][NUM_ELEMENT] = {{0}, {0}};
+    waitToAttachDebug();
+    int shared[NUM_OF_THREADS][NUM_ELEMENT] = {{0},
+                                               {0}};
     struct threadData td[NUM_OF_THREADS];
 
     for (int i = 0; i < NUM_OF_THREADS; i++) {
@@ -139,8 +120,7 @@ int main(int argc, char **argv) {
         td[i].threadId = i;
         td[i].shared = shared[i];
         printf("rank %d, thread %d, %p\n", rank, i, shared[i]);
-        MPI_Win_create(shared[i], NUM_ELEMENT, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &(win[i]));
-        td[i].win = win[i];
+
         int rc = pthread_create(&threads[i], nullptr, MPIAction, (void *) &td[i]);
 
         int s = pthread_setaffinity_np(threads[i], sizeof(cpu_set_t), &cpuset[i % CORES]);
@@ -159,9 +139,6 @@ int main(int argc, char **argv) {
         pthread_join(threads[i], nullptr);
     }
 
-    for (int i = 0; i < NUM_OF_THREADS && rank == 0; i++) {
-        MPI_Win_free(&win[i]);
-    }
     MPI_Finalize();
     return 0;
 }

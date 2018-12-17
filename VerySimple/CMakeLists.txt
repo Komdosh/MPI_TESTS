@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(MPIThreads)
+project(VerySimple)
 
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
@@ -11,6 +11,7 @@ SET(CMAKE_C_COMPILER mpicc)
 SET(CMAKE_CXX_COMPILER mpic++)
 
 SET(SOURCE_FILES main.cpp)
-add_executable(MPIThreads ${SOURCE_FILES})
+add_executable(VerySimple ${SOURCE_FILES})
 
-target_link_libraries(MPIThreads ${MPI_LIBRARIES})
+target_link_libraries(VerySimple ${MPI_LIBRARIES})
+
