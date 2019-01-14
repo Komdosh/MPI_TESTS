@@ -2,7 +2,7 @@
 #include <math.h>
 #include <x86intrin.h>
 #include <zconf.h>
-#include "mpi.h"
+#include <mpi.h>
 #include "cpu_helper.cpp"
 
 #define NUM_ELEMENT  2
