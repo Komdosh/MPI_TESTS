@@ -2,7 +2,7 @@
 #include <math.h>
 #include <x86intrin.h>
 #include <zconf.h>
-#include "mpi.h"
+#include <mpi.h>
 #include "cpu_helper.cpp"
 
 #define NUM_ELEMENT  2
@@ -89,6 +89,7 @@ void waitToAttachDebug() {
 }
 
 int main(int argc, char **argv) {
+    //sleep(5);
     cpu_set_t cpuset[CORES];
     pthread_t threads[NUM_OF_THREADS];
     for (int i = 0; i < CORES; i++) {
@@ -110,7 +111,7 @@ int main(int argc, char **argv) {
     }
 
     //printf("Rank %d running on %s\n", rank, processorName);
-    waitToAttachDebug();
+    //waitToAttachDebug()
     int shared[NUM_OF_THREADS][NUM_ELEMENT] = {{0},
                                                {0}};
     struct threadData td[NUM_OF_THREADS];
