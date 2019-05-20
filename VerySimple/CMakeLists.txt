@@ -10,10 +10,11 @@ SET(MPI_PER_GLOBAL ${CUSTOM_BUILD_MPICH_FOLDER}/global/bin)
 SET(MPI_PER_VNI_HANDOFF ${CUSTOM_BUILD_MPICH_FOLDER}/per-vni-handoff/bin)
 SET(MPI_PER_VNI_TRYLOCK ${CUSTOM_BUILD_MPICH_FOLDER}/per-vni-trylock/bin)
 
-SET(CURRENT_MPI ${MPI_PER_GLOBAL})
+SET(CURRENT_MPI ${MPI_PER_VNI_TRYLOCK})
 SET(MPICH_SRC ../../MPI_ETU/mpich/mpich-3.3/src)
 
-include_directories(${MPICH_SRC} ${MPICH_SRC}/include ${CURRENT_MPI})
+include_directories(${MPICH_SRC} ${MPICH_SRC}/include ${CURRENT_MPI} /usr/src/glibc/debian/sysdeps)
+
 
 SET(CMAKE_C_COMPILER ${CURRENT_MPI}/mpicc)
 SET(CMAKE_CXX_COMPILER ${CURRENT_MPI}/mpic++)
