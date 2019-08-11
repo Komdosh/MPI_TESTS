@@ -13,13 +13,13 @@ PROGRAM_PATH="cmake-build-debug/VerySimple"
 NUMBER_OF_PROCESS="2"
 
 setDebug(){
-  if test -f "./dbg*"; then
-    rm dbg*
+  if test -f "log/dbg*"; then
+    rm "log/dbg*"
   fi
-
-  export MPICH_DBG_FILENAME=./dbg-%d.log
-  export MPICH_DBG_CLASS=THREAD
-  export MPICH_DBG_LEVEL=VERBOSE
+  echo "${LOG_PREFIX} activate debug mode"
+  export MPICH_DBG_FILENAME="log/dbg-%d.log"
+  export MPICH_DBG_CLASS="ALL"
+  export MPICH_DBG_LEVEL="VERBOSE"
 }
 
 CURRENT_MPI=""
@@ -27,12 +27,12 @@ CURRENT_MPI=""
 while getopts ":gp:n:d" opt; do
 	case $opt in
 		g) #global critical section
-            CURRENT_MPI="$MPICH_GLOBAL_DIR"
+      CURRENT_MPI="$MPICH_GLOBAL_DIR"
 			;;
 		p) #per-vni trylock
 			perVniType=${OPTARG}
-            if test "$perVniType" != "trylock" && test "$perVniType" != "handoff"; then
-			  echo ${LOG_PREFIX} "Wrong per-vni type, trylock or handoff only!"
+      if test "$perVniType" != "trylock" && test "$perVniType" != "handoff"; then
+			  echo "${LOG_PREFIX} Wrong per-vni type, trylock or handoff only!"
 			  exit 1
 			fi
 			CURRENT_MPI="/per-vni-$perVniType"
@@ -43,10 +43,12 @@ while getopts ":gp:n:d" opt; do
 		d)
 		  setDebug
 		  ;;
-		:) #empty or unknown arg
+		*) #empty or unknown arg
 			#do nothing
 			;;
     esac
 done
 
-eval "${MPICH_DIR}${CURRENT_MPI}${MPICH_MPIEXEC} -host localhost -n ${NUMBER_OF_PROCESS} ${PROGRAM_PATH}"
+RUN_SCRIPT="${MPICH_DIR}${CURRENT_MPI}${MPICH_MPIEXEC} -host localhost -n ${NUMBER_OF_PROCESS} ${PROGRAM_PATH}"
+echo "${LOG_PREFIX} ${RUN_SCRIPT}"
+eval "${RUN_SCRIPT}"
