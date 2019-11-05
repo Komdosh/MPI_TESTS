@@ -44,12 +44,12 @@ void *MPIAction(void *threadarg) {
     double *times = threadData->times;
 
     double start = MPI_Wtime();
-    sendSharedArr(shared, threadId + 1, threadId + 1);
-
     pthread_barrier_wait(&pThreadBarrier);
     if (threadId == NUM_OF_THREADS - 1) {
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    sendSharedArr(shared, threadId + 1, threadId + 1);
+
 //    printf("MAIN RECV: sourceRank: %d, tag: %d\n", threadId+1, threadId+1);
     receiveSharedArr(threadId + 1, threadId + 1);
 

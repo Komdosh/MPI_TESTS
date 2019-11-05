@@ -13,9 +13,9 @@ NUMBER_OF_PROCESS=2
 CURRENT_MPI=""
 
 CORES=4
-RATE=10000
+RATE=20000
 ELEMENTS=50000
-MAX_PROC_NUM=7
+MAX_PROC_NUM=10
 REPEATS=3
 
 while getopts ":m:dn:" opt; do
@@ -30,7 +30,7 @@ while getopts ":m:dn:" opt; do
     for PROC_NUM in $(seq 3 $MAX_PROC_NUM); do
       TOTAL_TIME=0
       for REPEAT in $(seq 1 $REPEATS); do
-        EXECUTION_TIME=$(sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/global -n $PROC_NUM)
+        EXECUTION_TIME=$(sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/multiqueue/global -n $PROC_NUM)
         TOTAL_TIME=$((TOTAL_TIME + EXECUTION_TIME))
       done
       AVG_TIME=$((TOTAL_TIME / REPEATS))
