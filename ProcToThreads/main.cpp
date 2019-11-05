@@ -4,11 +4,10 @@
 #include <unistd.h>
 #include "cpu_helper.cpp"
 
-//#define NUM_ELEMENT 500000
-#define NUM_ELEMENT 50000
+int ELEMENTS = 50000;
 int CORES = 4;
 int NUM_OF_THREADS = 3;
-#define RATE 10000
+int RATE = 10000;
 
 using namespace std;
 
@@ -21,19 +20,19 @@ struct ThreadData_s {
 
 typedef ThreadData_s ThreadData;
 
+pthread_barrier_t pThreadBarrier;
 
 void sendSharedArr(int *arrToSend, int destRank, int tag) {
     for (int i = 0; i < RATE; ++i) {
-        MPI_Send(&(arrToSend[0]), NUM_ELEMENT, MPI_INT, destRank, tag, MPI_COMM_WORLD);
+        MPI_Send(&(arrToSend[0]), ELEMENTS, MPI_INT, destRank, tag, MPI_COMM_WORLD);
 //    printf("SEND: destRank: %d, tag: %d\n", destRank, tag);
     }
 }
 
 void receiveSharedArr(int sourceRank, int tag) {
-    int local[NUM_ELEMENT] = {0};
+    int *local = new int[ELEMENTS];
     for (int i = 0; i < RATE; ++i) {
-        MPI_Recv(&(local[0]), NUM_ELEMENT, MPI_INT, sourceRank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-//    printf("RES: rank: %d, arr: %d\n", sourceRank, local[0]);
+        MPI_Recv(&(local[0]), ELEMENTS, MPI_INT, sourceRank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 }
 
@@ -47,6 +46,10 @@ void *MPIAction(void *threadarg) {
     double start = MPI_Wtime();
     sendSharedArr(shared, threadId + 1, threadId + 1);
 
+    pthread_barrier_wait(&pThreadBarrier);
+    if (threadId == NUM_OF_THREADS - 1) {
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
 //    printf("MAIN RECV: sourceRank: %d, tag: %d\n", threadId+1, threadId+1);
     receiveSharedArr(threadId + 1, threadId + 1);
 
@@ -69,6 +72,7 @@ void runMPI(char **argv) {
     double times[NUM_OF_THREADS];
 
     if (rank == 0) {
+        pthread_barrier_init(&pThreadBarrier, nullptr, NUM_OF_THREADS);
         cpu_set_t cpuset[CORES];
         pthread_t threads[NUM_OF_THREADS];
         for (int i = 0; i < CORES; i++) {
@@ -76,7 +80,7 @@ void runMPI(char **argv) {
             CPU_SET(i, &cpuset[i]);
         }
 
-        int shared[NUM_OF_THREADS][NUM_ELEMENT];
+        int shared[NUM_OF_THREADS][ELEMENTS];
 
         ThreadData td[NUM_OF_THREADS];
 
@@ -86,12 +90,10 @@ void runMPI(char **argv) {
             td[i].shared = shared[i];
             td[i].times = times;
 
-            for (int n = 0; n < NUM_ELEMENT; n++) {
+            for (int n = 0; n < ELEMENTS; n++) {
                 shared[i][n] = (rank + 1) * 100 + (i + 1) * 10 + n;
             }
-//            if (i == NUM_OF_THREADS - 1) {
-//                MPI_Barrier(MPI_COMM_WORLD);
-//            }
+
             int rc = pthread_create(&threads[i], nullptr, MPIAction, (void *) &td[i]);
 
             int s = pthread_setaffinity_np(threads[i], sizeof(cpu_set_t), &cpuset[i % CORES]);
@@ -110,14 +112,15 @@ void runMPI(char **argv) {
                 maxTime = times[i];
             }
         }
-        printf("%f\n", maxTime);
+        pthread_barrier_destroy(&pThreadBarrier);
+        printf("%d\n", (int) (maxTime * 1000));
     } else {
-        int shared[NUM_ELEMENT] = {0};
-        for (int n = 0; n < NUM_ELEMENT; n++) {
+        int *shared = new int[ELEMENTS]{0};
+        for (int n = 0; n < ELEMENTS; n++) {
             shared[n] = (rank + 1) * 100 + (rank + 1) * 10 + n;
         }
 //        printf("CHILD RECV: sourceRank: %d, tag: %d\n", 0, rank);
-       // MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
         receiveSharedArr(0, rank);
         sendSharedArr(shared, 0, rank);
     }
@@ -126,10 +129,12 @@ void runMPI(char **argv) {
 }
 
 int main(int argc, char **argv) {
-    int threads = atoi(argv[1]) - 1;
+    NUM_OF_THREADS = atoi(argv[1]) - 1;
     CORES = atoi(argv[2]);
+    RATE = atoi(argv[3]);
+    ELEMENTS = atoi(argv[4]);
 
-    if(threads<2){
+    if (NUM_OF_THREADS < 2) {
         printf("Threads number should be greater than 2\n");
         exit(1);
     }
@@ -137,7 +142,6 @@ int main(int argc, char **argv) {
             (char *) "VerySimple",
             NULL
     };
-    NUM_OF_THREADS = threads;
     runMPI(args);
 
     return 0;

@@ -13,28 +13,38 @@ NUMBER_OF_PROCESS=2
 CURRENT_MPI=""
 
 CORES=4
+RATE=10000
+ELEMENTS=50000
+MAX_PROC_NUM=7
+REPEATS=3
 
 while getopts ":m:dn:" opt; do
-	case $opt in
-		m) #mpi path
-			CURRENT_MPI="${OPTARG}"
-			;;
-		n) #number of process
-			NUMBER_OF_PROCESS="${OPTARG}"
-			;;
-	  d) #default script
-	    for PROC_NUM in 3 4 5 6 7
-      do
-        sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/multiqueue/global -n $PROC_NUM
+  case $opt in
+  m) #mpi path
+    CURRENT_MPI="${OPTARG}"
+    ;;
+  n) #number of process
+    NUMBER_OF_PROCESS="${OPTARG}"
+    ;;
+  d) #default script
+    for PROC_NUM in $(seq 3 $MAX_PROC_NUM); do
+      TOTAL_TIME=0
+      for REPEAT in $(seq 1 $REPEATS); do
+        EXECUTION_TIME=$(sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/global -n $PROC_NUM)
+        TOTAL_TIME=$((TOTAL_TIME + EXECUTION_TIME))
       done
-	    exit 0
-	    ;;
-		*) #empty or unknown arg
-			#do nothing
-			;;
-    esac
+      AVG_TIME=$((TOTAL_TIME / REPEATS))
+#      echo "AVG: $AVG_TIME TOTAL: $TOTAL_TIME"
+      echo $((RATE * ELEMENTS * (PROC_NUM - 1) * 2 / AVG_TIME))
+    done
+    exit 0
+    ;;
+  *) #empty or unknown arg
+    #do nothing
+    ;;
+  esac
 done
 
-RUN_SCRIPT="${MPICH_DIR}${CURRENT_MPI}${MPICH_MPIEXEC} -host localhost -n $NUMBER_OF_PROCESS $PROGRAM_PATH $NUMBER_OF_PROCESS $CORES"
+RUN_SCRIPT="${MPICH_DIR}${CURRENT_MPI}${MPICH_MPIEXEC} -host localhost -n $NUMBER_OF_PROCESS $PROGRAM_PATH $NUMBER_OF_PROCESS $CORES $RATE $ELEMENTS"
 #echo "$LOG_PREFIX $RUN_SCRIPT"
 eval "$RUN_SCRIPT"
