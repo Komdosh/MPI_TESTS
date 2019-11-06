@@ -13,9 +13,9 @@ NUMBER_OF_PROCESS=2
 CURRENT_MPI=""
 
 CORES=4
-RATE=20000
+RATE=10000
 ELEMENTS=50000
-MAX_PROC_NUM=10
+MAX_PROC_NUM=$(nproc)
 REPEATS=3
 
 while getopts ":m:dn:" opt; do
@@ -34,7 +34,7 @@ while getopts ":m:dn:" opt; do
         TOTAL_TIME=$((TOTAL_TIME + EXECUTION_TIME))
       done
       AVG_TIME=$((TOTAL_TIME / REPEATS))
-#      echo "AVG: $AVG_TIME TOTAL: $TOTAL_TIME"
+      #      echo "AVG: $AVG_TIME TOTAL: $TOTAL_TIME"
       echo $((RATE * ELEMENTS * (PROC_NUM - 1) * 2 / AVG_TIME))
     done
     exit 0

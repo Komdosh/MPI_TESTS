@@ -33,6 +33,7 @@ void receiveSharedArr(int sourceRank, int tag) {
     int *local = new int[ELEMENTS];
     for (int i = 0; i < RATE; ++i) {
         MPI_Recv(&(local[0]), ELEMENTS, MPI_INT, sourceRank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+//    printf("RES: rank: %d, arr: %d\n", sourceRank, local[0]);
     }
 }
 
