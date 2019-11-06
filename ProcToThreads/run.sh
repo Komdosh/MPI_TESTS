@@ -6,7 +6,7 @@ MPICH_MPIEXEC="/bin/mpiexec"
 #MPICH_MPICC="/bin/mpicc"
 #MPICH_MPIC++="/bin/mpic++"
 
-PROGRAM_PATH="cmake-build-debug/VerySimple"
+PROGRAM_PATH="cmake-build-debug/ProcToThreads"
 
 NUMBER_OF_PROCESS=2
 
@@ -30,7 +30,7 @@ while getopts ":m:dn:" opt; do
     for PROC_NUM in $(seq 3 $MAX_PROC_NUM); do
       TOTAL_TIME=0
       for REPEAT in $(seq 1 $REPEATS); do
-        EXECUTION_TIME=$(sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/multiqueue/global -n $PROC_NUM)
+        EXECUTION_TIME=$(sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/per-vci-trylock -n $PROC_NUM)
         TOTAL_TIME=$((TOTAL_TIME + EXECUTION_TIME))
       done
       AVG_TIME=$((TOTAL_TIME / REPEATS))
