@@ -12,11 +12,11 @@ NUMBER_OF_PROCESS=2
 
 CURRENT_MPI=""
 
-CORES=4
-RATE=10000
+CORES=$(nproc)
+RATE=20000
 ELEMENTS=50000
-MAX_PROC_NUM=$(nproc)
-REPEATS=3
+MAX_PROC_NUM=6
+REPEATS=10
 
 while getopts ":m:dn:" opt; do
   case $opt in
@@ -36,6 +36,18 @@ while getopts ":m:dn:" opt; do
       AVG_TIME=$((TOTAL_TIME / REPEATS))
       #      echo "AVG: $AVG_TIME TOTAL: $TOTAL_TIME"
       echo $((RATE * ELEMENTS * (PROC_NUM - 1) * 2 / AVG_TIME))
+    done
+    echo "MULTIQUEUE"
+    for PROC_NUM in $(seq 3 $MAX_PROC_NUM); do
+      TOTAL_TIME=0
+      for REPEAT in $(seq 1 $REPEATS); do
+        EXECUTION_TIME=$(sh ./run.sh -m /home/atabakov/projects/MPICH_DEV/mpich/compiled/multiqueue/per-vci-trylock -n $PROC_NUM)
+        TOTAL_TIME=$((TOTAL_TIME + EXECUTION_TIME))
+      done
+      AVG_TIME=$((TOTAL_TIME / REPEATS))
+      #      echo "AVG: $AVG_TIME TOTAL: $TOTAL_TIME"
+      echo $((RATE * ELEMENTS * (PROC_NUM - 1) * 2 / AVG_TIME))
+
     done
     exit 0
     ;;
